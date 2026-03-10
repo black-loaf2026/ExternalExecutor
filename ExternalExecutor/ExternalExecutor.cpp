@@ -22,11 +22,9 @@ void ElevateIdentity(DWORD pid, Instance Datamodel) {
     auto livethread = ReadMemory<uintptr_t>(threadref + Offsets::BindableEvent::LiveThread, pid);
     auto luastate = ReadMemory<uintptr_t>(livethread + Offsets::BindableEvent::LuaState, pid);
 
-    // RobloxExtraSpace* at lua_State+0x78
     auto extraSpace = ReadMemory<uintptr_t>(luastate + Offsets::LuaState::Userdata, pid);
     if (!extraSpace) return;
 
-    // Elevate identity and OR in max caps
     auto new_caps = identity_to_caps(8);
     WriteMemory<uint32_t>(extraSpace + Offsets::ExtraSpace::Identity, 8, pid);
     WriteMemory<uintptr_t>(extraSpace + Offsets::ExtraSpace::Caps,
@@ -44,8 +42,6 @@ void ElevateIdentity(DWORD pid, Instance Datamodel) {
         }
     }
 
-    // Patch SharedExtraSpace and ScriptContext - these are the canonical identity sources
-    // that the scheduler uses when spawning new coroutines.
     auto sharedPtr = ReadMemory<uintptr_t>(extraSpace + 0x18, pid);
     auto patch_identity = [&](uintptr_t addr, int range) {
         if (!addr) return;
