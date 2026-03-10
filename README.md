@@ -1,6 +1,15 @@
 # ExternalExecutor
-skidded from https://github.com/ChimeraLle-Real/ExternalExecutor/tree/main sooo thx to him for src
 
-## what is this?
+ExternalExecutor is an external Level 8 executor.
 
-this is level 8 external (some how) uses offsets from structures (like on yubx struct dump comments are the offsets) sooo yeah enjoy skidding :) oh forgot to say it needs like around 3 seconds to fully initilze ok now enjoy skidding :)
+Original source: https://github.com/ChimeraLle-Real/ExternalExecutor/tree/main  
+Credits to the original author for the base source.
+
+## What is this?
+
+This is a Level 8 external executor that works by using offsets from internal structures.  
+For example, offsets can be found in comments from a Yubx structure dump.
+
+The executor takes around **3 seconds to fully initialize** after starting.
+
+Feel free to experiment with it.
