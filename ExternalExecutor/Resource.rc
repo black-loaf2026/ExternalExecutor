@@ -1,3 +1,0 @@
-#include "Resource.h"
-
-INIT_SCRIPT RCDATA "Init.lua"
