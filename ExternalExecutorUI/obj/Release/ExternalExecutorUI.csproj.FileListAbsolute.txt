@@ -1,0 +1,10 @@
+C:\Users\ChimeraLle\Documents\ExternalExecutor\ExternalExecutorUI\bin\Release\ExternalExecutorUI.exe.config
+C:\Users\ChimeraLle\Documents\ExternalExecutor\ExternalExecutorUI\bin\Release\ExternalExecutorUI.exe
+C:\Users\ChimeraLle\Documents\ExternalExecutor\ExternalExecutorUI\bin\Release\ExternalExecutorUI.pdb
+C:\Users\ChimeraLle\Documents\ExternalExecutor\ExternalExecutorUI\obj\Release\ExternalExecutorUI.csproj.AssemblyReference.cache
+C:\Users\ChimeraLle\Documents\ExternalExecutor\ExternalExecutorUI\obj\Release\ExternalExecutorUI.Form1.resources
+C:\Users\ChimeraLle\Documents\ExternalExecutor\ExternalExecutorUI\obj\Release\ExternalExecutorUI.Properties.Resources.resources
+C:\Users\ChimeraLle\Documents\ExternalExecutor\ExternalExecutorUI\obj\Release\ExternalExecutorUI.csproj.GenerateResource.cache
+C:\Users\ChimeraLle\Documents\ExternalExecutor\ExternalExecutorUI\obj\Release\ExternalExecutorUI.csproj.CoreCompileInputs.cache
+C:\Users\ChimeraLle\Documents\ExternalExecutor\ExternalExecutorUI\obj\Release\ExternalExecutorUI.exe
+C:\Users\ChimeraLle\Documents\ExternalExecutor\ExternalExecutorUI\obj\Release\ExternalExecutorUI.pdb
