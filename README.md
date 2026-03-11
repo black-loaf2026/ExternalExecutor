@@ -1,4 +1,3 @@
-# rat removed
 # ExternalExecutor
 
 ExternalExecutor is an external Level 8 executor.
