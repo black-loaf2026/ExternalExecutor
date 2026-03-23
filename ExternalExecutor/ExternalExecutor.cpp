@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include <thread>
+#include <cstdio>
 
 #include "Utils/Process.hpp"
 #include "Utils/Instance.hpp"
@@ -22,57 +23,32 @@ void ElevateIdentity(DWORD pid, Instance Datamodel) {
     auto livethread = ReadMemory<uintptr_t>(threadref + Offsets::BindableEvent::LiveThread, pid);
     auto luastate = ReadMemory<uintptr_t>(livethread + Offsets::BindableEvent::LuaState, pid);
 
-    auto extraSpace = ReadMemory<uintptr_t>(luastate + Offsets::LuaState::Userdata, pid);
-    if (!extraSpace) return;
-
-    auto new_caps = identity_to_caps(8);
-    WriteMemory<uint32_t>(extraSpace + Offsets::ExtraSpace::Identity, 8, pid);
-    WriteMemory<uintptr_t>(extraSpace + Offsets::ExtraSpace::Caps,
-        ReadMemory<uintptr_t>(extraSpace + Offsets::ExtraSpace::Caps, pid) | new_caps, pid);
-
-    // Elevate mainthread
-    auto globalState = ReadMemory<uintptr_t>(luastate + Offsets::LuaState::global, pid);
-    auto mainthread = ReadMemory<uintptr_t>(globalState + Offsets::globalState::mainthread, pid);
-    if (mainthread) {
-        auto mtExtra = ReadMemory<uintptr_t>(mainthread + Offsets::LuaState::Userdata, pid);
-        if (mtExtra) {
-            WriteMemory<uint32_t>(mtExtra + Offsets::ExtraSpace::Identity, 8, pid);
-            WriteMemory<uintptr_t>(mtExtra + Offsets::ExtraSpace::Caps,
-                ReadMemory<uintptr_t>(mtExtra + Offsets::ExtraSpace::Caps, pid) | new_caps, pid);
-        }
+    if (!luastate) {
+        return;
     }
 
-    auto sharedPtr = ReadMemory<uintptr_t>(extraSpace + 0x18, pid);
-    auto patch_identity = [&](uintptr_t addr, int range) {
-        if (!addr) return;
-        for (int off = 0; off < range; off += 4) {
-            if (ReadMemory<int32_t>(addr + off, pid) == 3)
-                WriteMemory<int32_t>(addr + off, 8, pid);
-        }
-        };
+    Lua::pid = pid;
 
-    if (sharedPtr) {
-        patch_identity(sharedPtr, 0x2000);
-        auto scriptCtx = ReadMemory<uintptr_t>(sharedPtr + 0x8, pid);
-        if (scriptCtx) patch_identity(scriptCtx, 0x2000);
+    uintptr_t userdata = ReadMemory<uintptr_t>(luastate + 0x8, pid);
+
+    if (!userdata) {
+        return;
     }
+
+    WriteMemory<uint32_t>(userdata + 0x70, 8, pid);
+    WriteMemory<uintptr_t>(userdata + 0x40, identity_to_caps(8), pid);
 }
+
 std::string GetLuaCode(DWORD pid, int idx) {
     HMODULE hModule = NULL;
     GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
         (LPCWSTR)&GetLuaCode, &hModule);
 
     HRSRC resourceHandle = FindResourceW(hModule, MAKEINTRESOURCEW(idx), RT_RCDATA);
-    if (resourceHandle == NULL)
-    {
-        return "";
-    }
+    if (resourceHandle == NULL) return "";
 
     HGLOBAL loadedResource = LoadResource(hModule, resourceHandle);
-    if (loadedResource == NULL)
-    {
-        return "";
-    }
+    if (loadedResource == NULL) return "";
 
     DWORD size = SizeofResource(hModule, resourceHandle);
     void* data = LockResource(loadedResource);
@@ -90,6 +66,7 @@ int main()
 {
     std::thread(StartBridge).detach();
     std::vector<DWORD> pids = Process::GetProcessID();
+    
     for (DWORD pid : pids) {
         uintptr_t base = Process::GetModuleBase(pid);
         Instance Datamodel = FetchDatamodel(base, pid);

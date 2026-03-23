@@ -13,6 +13,7 @@ using json = nlohmann::json;
 #include "Utils/Process.hpp"
 #include "Utils/Instance.hpp"
 #include "Utils/Bytecode.hpp"
+#include "Utils/LuaState.hpp"
 
 inline std::string script = "";
 inline uintptr_t order = 0;
@@ -71,6 +72,47 @@ inline void Load() {
 		TheScript.SetScriptBytecode(Compressed, Sized);
 
 		return "";
+		};
+	env["findthread"] = [](std::string dta, nlohmann::json set, DWORD pid) {
+		Instance Datamodel = FetchDatamodel(Process::GetModuleBase(pid), pid);
+		Instance CoreGui = Datamodel.FindFirstChild("CoreGui");
+		Instance elevation_event = CoreGui.WaitForChild("ElevationEvent");
+
+		auto signals = ReadMemory<uintptr_t>(elevation_event.GetAddress() + Offsets::BindableEvent::Signals, pid);
+		auto function = ReadMemory<uintptr_t>(signals + Offsets::BindableEvent::Function, pid);
+		auto functionimpl = ReadMemory<uintptr_t>(function + Offsets::BindableEvent::FunctionImpl, pid);
+		auto threadref = ReadMemory<uintptr_t>(functionimpl + Offsets::BindableEvent::ThreadRef, pid);
+		auto livethread = ReadMemory<uintptr_t>(threadref + Offsets::BindableEvent::LiveThread, pid);
+		auto luastate = ReadMemory<uintptr_t>(livethread + Offsets::BindableEvent::LuaState, pid);
+
+		uintptr_t targetThread = 0;
+		if (luastate) {
+			uintptr_t userdata = ReadMemory<uintptr_t>(luastate + 0x8, pid);
+			if (userdata) {
+				uintptr_t shared = ReadMemory<uintptr_t>(userdata + 0x18, pid);
+				if (shared) {
+					uintptr_t scriptCtx = ReadMemory<uintptr_t>(shared + 0x8, pid);
+					if (scriptCtx) {
+						LuaTable* reg = GetRegistry(scriptCtx, pid);
+						if (reg && reg->node) {
+							int nodecount = 1 << reg->lsizenode;
+							LuaNode node;
+							for (int i = 0; i < nodecount; i++) {
+								Memory::ReadNative(reg->node + i * sizeof(LuaNode), &node, sizeof(LuaNode), pid);
+								if (node.key.tt_ == LUA_TTHREAD) {
+									targetThread = (uintptr_t)node.key.value.p;
+									break;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		json result;
+		result["thread"] = targetThread;
+		return result.dump();
 		};
 	env["request"] = [](std::string dta, nlohmann::json set, DWORD pid) {
 		std::string url = set["l"];

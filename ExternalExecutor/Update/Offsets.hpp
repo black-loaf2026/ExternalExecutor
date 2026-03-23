@@ -1,10 +1,11 @@
 #pragma once
 #include <Windows.h>
+#include "Utils/LuaState.hpp"
 
 namespace Offsets {
-	const uintptr_t EnableLoadModule = 0x78fad38;
+	const uintptr_t EnableLoadModule = 0x7b61808;
 
-	inline constexpr uintptr_t FakeDataModelPointer = 0x7F6C228;
+	inline constexpr uintptr_t FakeDataModelPointer = 0x81d3ea8;
 	inline constexpr uintptr_t FakeDataModelToDataModel = 0x1C0;
 
 	inline constexpr uintptr_t Children = 0x70;
@@ -25,19 +26,8 @@ namespace Offsets {
         inline constexpr uintptr_t LiveThread = 0x20;
         inline constexpr uintptr_t LuaState = 0x8;
     }
-
-    namespace LuaState {
-        inline constexpr uintptr_t Userdata = 0x78; // RobloxExtraSpace* userdata (lua_State+0x78)
-        inline constexpr uintptr_t global = 0x18; // LuaState* global
-    }
-    namespace globalState {
-        inline constexpr uintptr_t mainthread = 0x2F8; // global_State* mainthread
-    }
-    namespace ExtraSpace {
-        inline constexpr uintptr_t Identity = 0x30; // uint32_t Identity
-        inline constexpr uintptr_t Caps = 0x48;    // uintptr_t Capabilities
-    }
 }
+
 inline static uintptr_t identity_to_caps(uintptr_t i) {
     uintptr_t ret = 0;
     switch (i) {

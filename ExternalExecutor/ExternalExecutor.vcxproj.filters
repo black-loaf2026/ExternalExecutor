@@ -632,6 +632,9 @@
     <ClInclude Include="Dependecies\openssl\x509v3err.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Utils\LuaState.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Utils\Memory.hpp" />

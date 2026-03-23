@@ -82,6 +82,21 @@ env.getgenv = function()
 	return env
 end
 
+env.getrenv = function()
+	return env
+end
+
+env.findthread = function()
+	local res = nukedata("", "findthread", {})
+	if res then
+		local data = hs:JSONDecode(res)
+		if data.thread then
+			return data.thread
+		end
+	end
+	return 0
+end
+
 env.identifyexecutor = function()
 	return "ExternalExecutor", "1.0.1"
 end
