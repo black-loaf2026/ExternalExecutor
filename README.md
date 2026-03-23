@@ -12,4 +12,6 @@ For example, offsets can be found in comments from a Yubx structure dump.
 
 The executor takes around **3 seconds to fully initialize** after starting.
 
+Uses structures so you can make hookfunction and all that crap updated for #version-ae421f0582e54718
+
 Feel free to experiment with it.
