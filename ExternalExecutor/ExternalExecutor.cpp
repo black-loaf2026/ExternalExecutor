@@ -12,31 +12,63 @@
 #include "Utils/Instance.hpp"
 #include "Utils/Bytecode.hpp"
 
-void ElevateIdentity(DWORD pid, Instance Datamodel) {
+struct ElevationContext {
+    uintptr_t signals;
+    uintptr_t function;
+    uintptr_t functionimpl;
+    uintptr_t threadref;
+    uintptr_t livethread;
+    uintptr_t luastate;
+    uintptr_t userdata;
+};
+
+inline ElevationContext GetElevationContext(DWORD pid, Instance Datamodel) {
+    ElevationContext ctx = {};
+
     Instance CoreGui = Datamodel.FindFirstChild("CoreGui");
     Instance elevation_event = CoreGui.WaitForChild("ElevationEvent");
 
-    auto signals = ReadMemory<uintptr_t>(elevation_event.GetAddress() + Offsets::BindableEvent::Signals, pid);
-    auto function = ReadMemory<uintptr_t>(signals + Offsets::BindableEvent::Function, pid);
-    auto functionimpl = ReadMemory<uintptr_t>(function + Offsets::BindableEvent::FunctionImpl, pid);
-    auto threadref = ReadMemory<uintptr_t>(functionimpl + Offsets::BindableEvent::ThreadRef, pid);
-    auto livethread = ReadMemory<uintptr_t>(threadref + Offsets::BindableEvent::LiveThread, pid);
-    auto luastate = ReadMemory<uintptr_t>(livethread + Offsets::BindableEvent::LuaState, pid);
+    ctx.signals = ReadMemory<uintptr_t>(elevation_event.GetAddress() + Offsets::BindableEvent::Signals, pid);
+    ctx.function = ReadMemory<uintptr_t>(ctx.signals + Offsets::BindableEvent::Function, pid);
+    ctx.functionimpl = ReadMemory<uintptr_t>(ctx.function + Offsets::BindableEvent::FunctionImpl, pid);
+    ctx.threadref = ReadMemory<uintptr_t>(ctx.functionimpl + Offsets::BindableEvent::ThreadRef, pid);
+    ctx.livethread = ReadMemory<uintptr_t>(ctx.threadref + Offsets::BindableEvent::LiveThread, pid);
+    ctx.luastate = ReadMemory<uintptr_t>(ctx.livethread + Offsets::BindableEvent::LuaState, pid);
+    ctx.userdata = ReadMemory<uintptr_t>(ctx.luastate + 0x8, pid);
 
-    if (!luastate) {
-        return;
+    return ctx;
+}
+
+inline void WriteIfChanged(uintptr_t addr, void* data, size_t size, DWORD pid) {
+    static char oldData[4096];
+    if (size > sizeof(oldData)) return;
+    
+    Memory::ReadNative(addr, oldData, size, pid);
+    
+    if (memcmp(oldData, data, size) != 0) {
+        Memory::WriteNative(addr, data, size, pid);
+    }
+}
+
+inline bool ElevateIdentity(DWORD pid, Instance Datamodel) {
+    ElevationContext ctx = GetElevationContext(pid, Datamodel);
+
+    if (!ctx.luastate || !ctx.userdata) {
+        return false;
     }
 
     Lua::pid = pid;
 
-    uintptr_t userdata = ReadMemory<uintptr_t>(luastate + 0x8, pid);
-
-    if (!userdata) {
-        return;
+    RobloxExtraSpace* rbx = Lua(ctx.userdata).as<RobloxExtraSpace>();
+    if (rbx->identity == 8 && rbx->capabilities == identity_to_caps(8)) {
+        return true;
     }
 
-    WriteMemory<uint32_t>(userdata + 0x70, 8, pid);
-    WriteMemory<uintptr_t>(userdata + 0x40, identity_to_caps(8), pid);
+    rbx->identity = 8;
+    rbx->capabilities = identity_to_caps(8);
+    WriteIfChanged(ctx.userdata, rbx, sizeof(RobloxExtraSpace), pid);
+
+    return true;
 }
 
 std::string GetLuaCode(DWORD pid, int idx) {
